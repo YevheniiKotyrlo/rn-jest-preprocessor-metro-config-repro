@@ -1,79 +1,15 @@
-# rn-jest-preprocessor-metro-config-repro
+# React Native's Jest cannot require `@react-native/metro-config`
 
-![Build](https://github.com/YevheniiKotyrlo/rn-jest-preprocessor-metro-config-repro/workflows/Pre%20Merge%20Checks/badge.svg)
+This repository was made from React Native's reproducer template. The reproduction is in `jest-preprocessor/`; the template's `ReproducerApp` is unchanged and it does not use it.
 
-This is your new React Native Reproducer project.
+`jest-preprocessor/reproduce.sh` takes a `react/react-native` checkout where `yarn install` has run, copies `jest-preprocessor/metro-config-from-source-test.js` into it, runs that test with `yarn jest`, and removes it again:
 
-# Reproducer TODO list
-
-- [x] 1. Create a new reproducer project.
-- [ ] 2. Git clone your repository locally.
-- [ ] 3. Edit the project to reproduce the failure you're seeing.
-- [ ] 4. Push your changes, so that Github Actions can run the CI.
-- [ ] 5. Make sure the repository is public and share the link with the issue you reported.
-
-# How to use this Reproducer
-
-This project has been created with `npx @react-native-community/cli init` and is a vanilla React Native app.
-
-> [!IMPORTANT]  
-> Make sure you have completed the [React Native - Environment Setup](https://reactnative.dev/docs/set-up-your-environment) so that you have a working environment locally.
-
-## Step 1: Start the Metro Server
-
-First, you will need to start **Metro**, the JavaScript _bundler_ that ships _with_ React Native.
-
-To start Metro, run the following command from the _root_ of your React Native project:
-
-```bash
-# using npm
-npm start
-
-# OR using Yarn
-yarn start
+```sh
+git clone https://github.com/react/react-native
+(cd react-native && yarn install)
+./jest-preprocessor/reproduce.sh react-native
 ```
 
-## Step 2: Start your Application
+The test only requires `@react-native/metro-config`. In the repository's Jest setup it fails with `SyntaxError: Cannot use import statement outside a module` in `packages/metro-config/src/index.flow.js`: `jest/preprocessor.js` sends every file under a `metro-*` folder through `metro-babel-register`'s options with `sourceType: 'script'`, which leaves its `import` and `export` statements in place. The script's step 3 runs the same file through the same options under each `sourceType` and counts the statements left.
 
-Let Metro Bundler run in its _own_ terminal. Open a _new_ terminal from the _root_ of your React Native project. Run the following command to start your _Android_ or _iOS_ app:
-
-### For Android
-
-```bash
-# using npm
-npm run android
-
-# OR using Yarn
-yarn android
-```
-
-### For iOS
-
-First, make sure you install dependencies with:
-
-```bash
-cd ios && bundle install && bundle exec pod install
-```
-
-Then you can run the iOS app with:
-
-```bash
-# using npm
-npm run ios
-
-# OR using Yarn
-yarn ios
-```
-
-If everything is set up _correctly_, you should see your new app running in your _Android Emulator_ or _iOS Simulator_ shortly provided you have set up your emulator/simulator correctly.
-
-This is one way to run your app — you can also run it directly from within Android Studio and Xcode respectively.
-
-## Step 3: Modifying your App
-
-Now that you have successfully run the app, let's modify it.
-
-1. Open `App.tsx` in your text editor of choice and edit some lines.
-2. For **Android**: Press the <kbd>R</kbd> key twice or select **"Reload"** from the **Developer Menu** (<kbd>Ctrl</kbd> + <kbd>M</kbd> (on Window and Linux) or <kbd>Cmd ⌘</kbd> + <kbd>M</kbd> (on macOS)) to see your changes!
-
-   For **iOS**: Hit <kbd>Cmd ⌘</kbd> + <kbd>R</kbd> in your iOS Simulator to reload the app and see your changes!
+It exits 1 while the test fails with that `SyntaxError`, 0 once it passes, and 2 when a step fails or the test fails another way, and it ends with a `SUMMARY:` line. The checkout's path is printed as `<react-native>`.
